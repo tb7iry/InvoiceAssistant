@@ -62,6 +62,9 @@ public class InvoiceService(IGenericRepository<Invoice> invoiceRepo) : IInvoiceS
         invoice.InvoiceNumber = invoiceDto.InvoiceNumber;
         invoice.ClientName = invoiceDto.ClientName;
         invoice.IssueDate = invoiceDto.IssueDate;
+        invoice.DueDate = invoiceDto.DueDate;
+        invoice.Status = invoiceDto.Status;
+        invoice.Currency = invoiceDto.Currency;
         invoice.TotalAmount = invoiceDto.TotalAmount;
 
         // 3. Update details (add new, update existing, remove missing)
@@ -170,7 +173,7 @@ public class InvoiceService(IGenericRepository<Invoice> invoiceRepo) : IInvoiceS
         return new ApiResponse<IEnumerable<InvoiceDto>>(invoiceDtos, true);
     }
 
-    public async Task<List<InvoiceDto>> GetInvoicesAsync(InvoiceFilterDto filter)
+    public async Task<List<InvoiceDto>> GetInvoicesAsync(InvoiceFilterDto filter, CancellationToken ct = default)
     {
         var query = invoiceRepo.GetQueryable();
 
@@ -183,14 +186,35 @@ public class InvoiceService(IGenericRepository<Invoice> invoiceRepo) : IInvoiceS
         if (!string.IsNullOrWhiteSpace(filter.InvoiceNumber))
             query = query.Where(i => i.InvoiceNumber == filter.InvoiceNumber);
 
-        if (!string.IsNullOrWhiteSpace(filter.ClientName))
-            query = query.Where(i => i.ClientName.Contains(filter.ClientName));
+        if (!string.IsNullOrWhiteSpace(filter.Customer))
+            query = query.Where(i => i.ClientName.Contains(filter.Customer));
 
-        if (filter.MinTotalAmount.HasValue)
-            query = query.Where(i => i.TotalAmount >= filter.MinTotalAmount.Value);
+        if (!string.IsNullOrWhiteSpace(filter.Salesperson))
+            query = query.Where(i => i.Salesperson == filter.Salesperson);
 
-        if (filter.MaxTotalAmount.HasValue)
-            query = query.Where(i => i.TotalAmount <= filter.MaxTotalAmount.Value);
+        if (!string.IsNullOrWhiteSpace(filter.Status))
+            query = query.Where(i => i.Status == filter.Status);
+
+        if (!string.IsNullOrWhiteSpace(filter.Currency))
+            query = query.Where(i => i.Currency == filter.Currency);
+
+        if (filter.MinAmount.HasValue)
+            query = query.Where(i => i.TotalAmount >= filter.MinAmount.Value);
+
+        if (filter.MaxAmount.HasValue)
+            query = query.Where(i => i.TotalAmount <= filter.MaxAmount.Value);
+
+        if (!string.IsNullOrWhiteSpace(filter.Branch))
+            query = query.Where(i => i.Branch == filter.Branch);
+
+        if (!string.IsNullOrWhiteSpace(filter.ItemSku))
+            query = query.Where(i => i.InvoiceDetails.Any(d => d.ItemSku == filter.ItemSku));
+
+        if (filter.TopN.HasValue && filter.TopN > 0)
+            query = query.OrderByDescending(i => i.IssueDate).Take(filter.TopN.Value);
+
+        if (filter.OverdueOnly.HasValue && filter.OverdueOnly.Value)
+            query = query.Where(i => i.DueDate.HasValue && i.DueDate < DateTimeOffset.Now && i.Status != "Paid");
 
         // Include InvoiceDetails if needed for summaries
         query = query.Include(i => i.InvoiceDetails);

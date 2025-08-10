@@ -10,5 +10,5 @@ public interface IInvoiceService
     Task<ApiResponse<InvoiceDto>> AddAsync(InvoiceDto invoice);
     Task<ApiResponse<InvoiceDto>> UpdateAsync(InvoiceDto invoice);
     Task<ApiResponse<PaginatedList<InvoiceListViewDto>>> GetAllPaginatedAsync(int pageIndex, int pageSize);
-    Task<List<InvoiceDto>> GetInvoicesAsync(InvoiceFilterDto filter);
+    Task<List<InvoiceDto>> GetInvoicesAsync(InvoiceFilterDto filter , CancellationToken ct = default);
 }

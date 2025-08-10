@@ -6,5 +6,5 @@ namespace InvoiceAssistant.Application.Contracts;
 
 public interface IChatbotService
 {
-    Task<string> AskQuestionAsync(QuestionDto userQuestion);
+    Task<string> AskQuestionAsync(QuestionDto userQuestion , CancellationToken ct = default);
 }

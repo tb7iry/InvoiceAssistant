@@ -1,6 +1,5 @@
 ﻿using InvoiceAssistant.Application.Contracts;
 using InvoiceAssistant.Infrastructure.Db;
-using InvoiceAssistant.Infrastructure.LLM;
 using InvoiceAssistant.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,7 +17,10 @@ public static class InfrastructureServicesExtension
 
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
-        services.AddHttpClient<ILLMClient, OllamaClient>();
+        services.AddHttpClient<ILLMClient, OllamaClient>((c =>
+         {
+             c.BaseAddress = new Uri("http://localhost:11434");
+         }));
 
         return services;
     }
